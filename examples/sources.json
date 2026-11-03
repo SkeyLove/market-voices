@@ -1,0 +1,4 @@
+[
+  {"id":"damodaran-blog","speaker_id":"aswath-damodaran","speaker":"Aswath Damodaran","group":"aswath-damodaran","category":"academic","identity_url":"https://www.stern.nyu.edu/faculty/bio/aswath-damodaran","feed_url":"https://aswathdamodaran.blogspot.com/feeds/posts/default","platform":"official","verified":false,"rights":"pending"},
+  {"id":"fed-speeches","speaker_id":"federal-reserve-official","speaker":"Federal Reserve officials (attribute each speech before approval)","group":"federal-reserve","category":"official","identity_url":"https://www.federalreserve.gov/newsevents/speeches-testimony.htm","feed_url":"https://www.federalreserve.gov/feeds/speeches.xml","platform":"official","verified":false,"rights":"pending"}
+]

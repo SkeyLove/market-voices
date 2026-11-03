@@ -1,0 +1,102 @@
+name: scheduled-publication
+on:
+  schedule:
+    # Offset from the busy top of the hour. Calendar code handles DST and early closes.
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        default: tick
+        options: [tick, export, manual, auto]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: market-voices-production
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: vars.ENABLE_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install '.[youtube]'
+      - name: Check due window
+        id: gate
+        env:
+          OPERATION: ${{ inputs.operation }}
+          TRIAL_WINDOW_ID: ${{ vars.TRIAL_WINDOW_ID }}
+        run: |
+          window=$(market-voices due)
+          if [ -n "$OPERATION" ]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          elif [ "$window" != 'null' ]; then
+            actual=$(python -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<< "$window")
+            if [ -z "$TRIAL_WINDOW_ID" ] || [ "$actual" = "$TRIAL_WINDOW_ID" ]; then
+              echo 'run=true' >> "$GITHUB_OUTPUT"
+            fi
+          fi
+      - name: Reject publicly accessible production state
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATE_REPOSITORY: ${{ vars.STATE_REPOSITORY }}
+        run: |
+          python - <<'PYCODE'
+          import json,os,urllib.request,urllib.error
+          req=urllib.request.Request('https://api.github.com/repos/'+os.environ['STATE_REPOSITORY'],headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          try:
+              with urllib.request.urlopen(req) as r: data=json.load(r)
+              assert data['private'] is True, 'Production state must stay private'
+          except urllib.error.HTTPError as exc:
+              if exc.code!=404: raise
+          PYCODE
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          repository: ${{ vars.STATE_REPOSITORY }}
+          ssh-key: ${{ secrets.STATE_DEPLOY_KEY }}
+          path: .production-state
+          persist-credentials: true
+      - name: Prepare durable state access
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          git -C .production-state config user.name 'Market Voices Publisher'
+          git -C .production-state config user.email 'publisher@users.noreply.github.com'
+      - name: Produce edition and persist before export
+        if: steps.gate.outputs.run == 'true'
+        env:
+          MARKET_VOICES_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MARKET_VOICES_CONFIG: examples/production.json
+          OPERATION: ${{ inputs.operation }}
+        run: |
+          export MARKET_VOICES_STATE_REPO="$GITHUB_WORKSPACE/.production-state"
+          market-voices --state .production-state register --input .production-state/sources.json
+          case "$OPERATION" in
+            manual) market-voices --state .production-state mode manual ;;
+            auto) market-voices --state .production-state mode auto ;;
+            export) : ;;
+            *) market-voices --state .production-state run-window ;;
+          esac
+          python -c 'from market_voices.store import Store; from market_voices.cli import checkpoint; checkpoint(Store(".production-state"))'
+          market-voices --state .production-state export --output site
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.gate.outputs.run == 'true'
+        with:
+          path: site
+      - name: Deploy static website
+        id: deploy
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/deploy-pages@v4

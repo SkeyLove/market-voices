@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "market-voices"
+version = "0.1.0"
+description = "Evidence-aware bilingual market commentary publishing, without reader-side AI"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["pydantic>=2.11,<3", "requests>=2.32,<3", "exchange-calendars>=4.13,<5", "defusedxml>=0.7,<1"]
+
+[project.optional-dependencies]
+youtube = ["youtube-transcript-api>=1.2,<2"]
+dev = ["pytest>=8", "build>=1.2"]
+
+[project.scripts]
+market-voices = "market_voices.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/market_voices"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/dist", "/state", "/.venv", "/.pytest_cache", "/site"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
