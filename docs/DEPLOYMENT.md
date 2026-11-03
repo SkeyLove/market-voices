@@ -9,7 +9,7 @@ This directory is the independent repository root. Do not publish the containing
    Secrets: `STATE_DEPLOY_KEY`, an SSH deploy key with write access restricted to that private repository;
    `DEEPSEEK_API_KEY`, your own provider key. The Pages deployment uses the normal GITHUB_TOKEN.
 5. Edit `examples/production.json` with verified current prices and your ticker whitelist. Never commit a key.
-   Edit `examples/sources.json` with reviewed identities/rights. Default sources intentionally remain pending.
+   Copy `examples/sources.json` into the private state repository as `sources.json` and review identities/rights there. The workflow reads that private registry; public defaults intentionally remain pending.
 6. Prepare and approve at least six real backup editions locally; copy **only the selected new tool state** to
    the private repository as voices.sqlite3, then inspect private repository access. Do not copy all research data.
 7. Dispatch the workflow with operation=export first. Inspect Pages and ensure no private artifacts are served.
@@ -35,3 +35,9 @@ visibility and contents, log in, create the repositories and add Secrets. Do not
 GitHub schedules may be delayed or dropped; 15 minutes is an operational goal, not a guaranteed SLA.
 If timeliness becomes contractual, replace the scheduler with a managed job service without changing content contracts.
 Public-fork schedules can be disabled for inactivity; monitor workflow health and GitHub settings.
+
+## First bounded trial
+
+`TRIAL_WINDOW_ID=2026-11-03-post` restricts scheduled production to that one window.
+Manual export still works. For recurring production, explicitly review and clear the trial variable.
+The initial site contains one labeled historical selection; six real reserve editions are not yet prepared.

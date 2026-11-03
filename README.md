@@ -5,7 +5,13 @@ serve static content to everyone. No reader accounts, model calls or API keys in
 
 这是从 MoneyTalk 人物观点实验拆出的独立工具。网站供读者阅读，AI仅参与维护者的内容生产。
 支持本机 Codex Skill 和模型API；两者共用契约、核验、审核与发布流程。
-**状态：本地发布候选；真实云端部署、连续运营和读者验证仍待完成。**
+**状态：公开静态站已部署；首次盘后生产试运行已排程，连续运营和读者验证仍待完成。**
+
+在线阅读：https://skeylove.github.io/market-voices/
+源码：https://github.com/SkeyLove/market-voices
+
+首次试运行：北京时间2026-11-04 06:00（美东2026-11-03收盘后一小时），GitHub调度目标约15分钟内。
+当前初始期刊为明确标注的2025历史访谈精选，不代表本周观点；不虚构六期真实备用稿。
 
 ## 1. 无密钥演示（Python 3.12+）
 
@@ -51,6 +57,7 @@ YouTube频道自动发现和云端字幕可得性不作保证；来源不可得�
 export MARKET_VOICES_CONFIG=/private/path/model.json
 # 在你自己的终端安全设置 MARKET_VOICES_API_KEY；不要写入仓库。
 market-voices --state ./state summarize
+# 历史档案整理需显式添加 --include-history，定时生产默认仅处理近7天。
 ```
 
 费率快照默认采用2026-11-03官方Flash峰值、输入缓存未命中价：USD0.30/1M输入、USD1.20/1M输出。
