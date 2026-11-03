@@ -83,7 +83,7 @@ def infer(store,raw,source,checkpoint=lambda:None,post=post_json):
         raise ProviderError('invalid_model_output',retry=True) from None
 
 
-def process(store,checkpoint=lambda:None,limit=None):
+def process(store,checkpoint=lambda:None,limit=None,include_history=False):
     config=settings()
     credential_id=digest({'provider':config.provider,'endpoint':config.base_url,'model':config.model,'credential':config.api_key.get_secret_value()})
     if store.get('provider_blocked')==credential_id:
@@ -92,6 +92,8 @@ def process(store,checkpoint=lambda:None,limit=None):
     count=failures=0
     today=datetime.now(UTC).date().isoformat()
     for key,raw,old,approval,approved_hash in store.records():
+        if not include_history and raw.published < datetime.now(UTC)-timedelta(days=7):
+            continue
         if old and old.input_hash==raw.fingerprint and old.prompt_version==PROMPT_VERSION:
             continue
         if raw.evidence not in ('full_text','official_text','transcript'):

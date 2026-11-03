@@ -41,7 +41,7 @@ def main(argv=None):
     parser.add_argument('--config',type=Path)
     commands=parser.add_subparsers(dest='command',required=True)
     commands.add_parser('reset-provider');
-    commands.add_parser('status');commands.add_parser('collect');commands.add_parser('summarize')
+    commands.add_parser('status');commands.add_parser('collect');summary_command=commands.add_parser('summarize');summary_command.add_argument('--include-history',action='store_true')
     demo=commands.add_parser('demo');demo.add_argument('--output',type=Path,required=True)
     migrate=commands.add_parser('migrate-inbox');migrate.add_argument('--input',type=Path,required=True)
     migrate=commands.add_parser('migrate-model');migrate.add_argument('--input',type=Path,required=True);migrate.add_argument('--output',type=Path,required=True)
@@ -111,7 +111,7 @@ def main(argv=None):
         elif args.command=='video':
             result={'id':collect_video(store,args.source,args.url,args.published,args.title)}
         elif args.command=='summarize':
-            result=process(store,checkpoint=lambda:checkpoint(store))
+            result=process(store,checkpoint=lambda:checkpoint(store),include_history=args.include_history)
         elif args.command=='candidates':
             rows=[{'id':k,'input_hash':r.fingerprint,'raw':r.model_dump(mode='json'),'summary':s.model_dump(mode='json') if s else None,
                    'summary_hash':digest(s.model_dump(mode='json')) if s else None,

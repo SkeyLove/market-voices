@@ -1,4 +1,4 @@
-from datetime import UTC,datetime
+from datetime import UTC,datetime,timedelta
 import json
 from pathlib import Path
 import pytest
@@ -12,7 +12,7 @@ from market_voices.provider import infer,ProviderError
 def fixture_record(store):
     source=Source(id='a',speaker_id='person',speaker='Person',group='group',category='creator',identity_url='https://example.com/person',verified=True,rights='summary_link_only')
     store.register(source)
-    raw=Raw(source_id='a',url='https://example.com/talk',title='Original',published='2025-01-01T00:00:00Z',text='This stock is priced below my estimate of its intrinsic value.',evidence='full_text',locator='paragraph 2')
+    raw=Raw(source_id='a',url='https://example.com/talk',title='Original',published=datetime.now(UTC)-timedelta(hours=1),text='This stock is priced below my estimate of its intrinsic value.',evidence='full_text',locator='paragraph 2')
     store.ingest(raw)
     return raw,source
 
@@ -154,3 +154,11 @@ def test_migrate_model_never_overwrites_and_is_private(tmp_path):
     assert stat.S_IMODE(new.stat().st_mode)==0o600
     with pytest.raises(ValueError):model(old,new)
     assert json.loads(old.read_text())['api_key']=='private-key'
+
+
+def test_scheduled_processing_skips_historical_material(context,monkeypatch):
+    import market_voices.provider as mod
+    store,raw,source=context
+    store.ingest(raw.model_copy(update={'published':datetime(2025,1,1,tzinfo=UTC)}))
+    monkeypatch.setattr(mod,'infer',lambda *a,**k:pytest.fail('historical processing should be explicit'))
+    assert mod.process(store)=={'summarized':0,'failed':0}
